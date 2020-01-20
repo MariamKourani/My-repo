@@ -52,20 +52,26 @@ def home():
     for protein in allProteins:
         allProteinsList.append("'"+protein+"'");
     allProteinsList = ",".join(allProteinsList);
-
     print (allProteinsList);
 
-    #query the database:
-    db_query_results = db.engine.execute("SELECT m2.uniprot FROM links INNER JOIN mapping ON links.protein1 = mapping.ensembl "
-                                       "INNER join mapping as m2 ON m2.ensembl = links.protein2 "
-                                        "WHERE mapping.uniprot = '"+queryId+"' AND m2.uniprot IN ("+allProteinsList+") "
-                                        "ORDER BY links.combined_score DESC LIMIT 5 OFFSET "+offset)
-    #get a list of nodes from the returned proteins:
-    nodes =[];
-    for pro in db_query_results:
-        #print(pro);
-        nodes.append(pro[0]);
-    print(nodes);
-    return ",".join(nodes)
+    # query the database:
+    db_query_results = db.engine.execute("SELECT info.preferred_name, m2.uniprot FROM links INNER JOIN mapping ON links.protein1 = mapping.ensembl "
+                                         "INNER JOIN mapping AS m2 ON m2.ensembl = links.protein2 "
+                                         "INNER JOIN info ON m2.ensembl = info.protein_external_id "
+                                         "WHERE mapping.uniprot = '"+queryId+"' AND m2.uniprot IN ("+allProteinsList+") "
+                                         "ORDER BY links.combined_score DESC LIMIT 5 OFFSET "+offset);
 
-app.run(debug=True, host='0.0.0.0')
+    #print (db_query_results);
+    #get a list of nodes from the returned proteins:
+    #nodes =[];
+    geneProteinDic = {};
+    for items in db_query_results:
+        key, value = items[0], items[1];
+        geneProteinDic[key]= value;
+    print(geneProteinDic);
+    return geneProteinDic;
+        #nodes.append(pro[0]);
+    #print(nodes);
+    #return ",".join(nodes)
+
+app.run(debug=True, host='0.0.0.0');
